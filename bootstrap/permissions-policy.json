@@ -11,15 +11,39 @@
       ]
     },
     {
-      "Sid": "InfrastructureAccess",
+      "Sid": "NetworkingAndCompute",
+      "Effect": "Allow",
+      "Action": ["ec2:*"],
+      "Resource": "*"
+    },
+    {
+      "Sid": "Database",
+      "Effect": "Allow",
+      "Action": ["rds:*"],
+      "Resource": "*"
+    },
+    {
+      "Sid": "Cache",
+      "Effect": "Allow",
+      "Action": ["elasticache:*"],
+      "Resource": "*"
+    },
+    {
+      "Sid": "Containers",
+      "Effect": "Allow",
+      "Action": ["ecs:*", "ecr:*"],
+      "Resource": "*"
+    },
+    {
+      "Sid": "DNS",
+      "Effect": "Allow",
+      "Action": ["route53:*"],
+      "Resource": "*"
+    },
+    {
+      "Sid": "IamForServiceRoles",
       "Effect": "Allow",
       "Action": [
-        "ec2:*",
-        "rds:*",
-        "elasticache:*",
-        "ecs:*",
-        "ecr:*",
-        "route53:*",
         "iam:GetRole",
         "iam:PassRole",
         "iam:CreateRole",
@@ -29,7 +53,8 @@
         "iam:PutRolePolicy",
         "iam:DeleteRolePolicy",
         "iam:ListRolePolicies",
-        "iam:ListAttachedRolePolicies"
+        "iam:ListAttachedRolePolicies",
+        "iam:TagRole"
       ],
       "Resource": "*"
     }
