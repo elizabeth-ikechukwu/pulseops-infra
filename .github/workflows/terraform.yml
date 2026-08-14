@@ -28,6 +28,17 @@ jobs:
       - name: Check out the code
         uses: actions/checkout@v4
 
+      - name: TEMP DEBUG - decode the real OIDC token
+        run: |
+          RESPONSE=$(curl -sSL -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=sts.amazonaws.com")
+          TOKEN=$(echo "$RESPONSE" | jq -r '.value')
+          PAYLOAD=$(echo "$TOKEN" | cut -d '.' -f2)
+          MOD=$(( ${#PAYLOAD} % 4 ))
+          if [ $MOD -eq 2 ]; then PAYLOAD="${PAYLOAD}=="; elif [ $MOD -eq 3 ]; then PAYLOAD="${PAYLOAD}="; fi
+          echo "$PAYLOAD" | base64 -d | jq '{sub, aud, repository, repository_owner, ref, event_name}'
+        # This step is temporary, for diagnosing the OIDC trust
+        # failure. Remove it once the real cause is found.
+
       - name: Assume the deploy role via OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
