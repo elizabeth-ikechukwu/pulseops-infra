@@ -12,6 +12,7 @@ on:
   pull_request:
     branches: [main]
     paths: ['environments/dev/**', 'modules/**', '.github/workflows/terraform.yml']
+  workflow_dispatch:
 
 permissions:
   id-token: write   # required for OIDC — this is what replaces static keys
