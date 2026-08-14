@@ -1,0 +1,61 @@
+name: Terraform
+
+# Plan on every pull request, so you see exactly what would change
+# before merging. Apply only on push to main, after that review has
+# already happened. No AWS keys stored anywhere — the role is
+# assumed fresh, per run, via OIDC, and expires with the job.
+
+on:
+  push:
+    branches: [main]
+    paths: ['environments/dev/**', 'modules/**']
+  pull_request:
+    branches: [main]
+    paths: ['environments/dev/**', 'modules/**']
+
+permissions:
+  id-token: write   # required for OIDC — this is what replaces static keys
+  contents: read
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: environments/dev
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      - name: Assume the deploy role via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.14.9'
+
+      - name: Terraform init
+        run: terraform init
+
+      - name: Terraform format check
+        run: terraform fmt -check -recursive
+        continue-on-error: true # style only, never blocks
+
+      - name: Terraform validate
+        run: terraform validate
+
+      - name: Terraform plan
+        run: terraform plan -no-color
+        # On a pull request, this is the whole job: show what WOULD
+        # change, then stop. Nothing gets touched yet.
+
+      - name: Terraform apply
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: terraform apply -auto-approve
+        # Only runs after a merge to main, meaning the plan above has
+        # already been reviewed on the PR that got merged.
