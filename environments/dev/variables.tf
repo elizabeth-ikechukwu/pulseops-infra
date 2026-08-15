@@ -12,6 +12,12 @@ variable "aws_region" {
   default     = "us-east-1"
 }
 
+variable "vpc_cidr" {
+  description = "CIDR block for the VPC, shared by the vpc and rds modules"
+  type        = string
+  default     = "10.0.0.0/16"
+}
+
 variable "azs" {
   description = "Two availability zones in the chosen region"
   type        = list(string)
