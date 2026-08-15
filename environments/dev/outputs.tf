@@ -24,3 +24,10 @@ output "db_password_parameter_name" {
 output "db_name" {
   value = module.rds.db_name
 }
+output "redis_endpoint" {
+  value = module.elasticache.endpoint
+}
+
+output "redis_port" {
+  value = module.elasticache.port
+}
