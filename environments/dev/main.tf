@@ -49,3 +49,17 @@ module "rds" {
     ManagedBy   = "terraform"
   }
 }
+module "elasticache" {
+  source = "../../modules/elasticache"
+
+  name                = "pulseops-${var.environment}"
+  vpc_id              = module.vpc.vpc_id
+  vpc_cidr_block      = var.vpc_cidr
+  private_subnet_ids  = module.vpc.private_subnet_ids
+
+  tags = {
+    Project     = "pulseops"
+    Environment = var.environment
+    ManagedBy   = "terraform"
+  }
+}
