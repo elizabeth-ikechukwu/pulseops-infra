@@ -63,3 +63,14 @@ module "elasticache" {
     ManagedBy   = "terraform"
   }
 }
+module "ecr" {
+  source = "../../modules/ecr"
+
+  name = "pulseops-${var.environment}"
+
+  tags = {
+    Project     = "pulseops"
+    Environment = var.environment
+    ManagedBy   = "terraform"
+  }
+}

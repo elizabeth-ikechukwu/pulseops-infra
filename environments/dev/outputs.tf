@@ -31,3 +31,10 @@ output "redis_endpoint" {
 output "redis_port" {
   value = module.elasticache.port
 }
+output "backend_ecr_repository_url" {
+  value = module.ecr.backend_repository_url
+}
+
+output "frontend_ecr_repository_url" {
+  value = module.ecr.frontend_repository_url
+}
