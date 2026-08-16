@@ -38,3 +38,10 @@ output "backend_ecr_repository_url" {
 output "frontend_ecr_repository_url" {
   value = module.ecr.frontend_repository_url
 }
+output "ecs_cluster_name" {
+  value = module.ecs.cluster_name
+}
+
+output "ecs_autoscaling_group_name" {
+  value = module.ecs.autoscaling_group_name
+}
