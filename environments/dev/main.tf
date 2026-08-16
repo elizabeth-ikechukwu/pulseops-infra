@@ -74,3 +74,17 @@ module "ecr" {
     ManagedBy   = "terraform"
   }
 }
+module "ecs" {
+  source = "../../modules/ecs"
+
+  name               = "pulseops-${var.environment}"
+  vpc_id             = module.vpc.vpc_id
+  public_subnet_ids  = module.vpc.public_subnet_ids
+  instance_type      = "t3.small"
+
+  tags = {
+    Project     = "pulseops"
+    Environment = var.environment
+    ManagedBy   = "terraform"
+  }
+}
