@@ -4,7 +4,7 @@
     {
       "Sid": "TerraformStateAccess",
       "Effect": "Allow",
-      "Action": ["s3:GetObject", "s3:PutObject", "s3:ListBucket"],
+      "Action": ["s3:GetObject", "s3:PutObject", "s3:DeleteObject", "s3:ListBucket"],
       "Resource": [
         "arn:aws:s3:::pulseops-terraform-state-366428725717",
         "arn:aws:s3:::pulseops-terraform-state-366428725717/*"
@@ -39,6 +39,43 @@
       "Effect": "Allow",
       "Action": ["route53:*"],
       "Resource": "*"
+    },
+    {
+      "Sid": "ParameterStore",
+      "Effect": "Allow",
+      "Action": [
+        "ssm:PutParameter",
+        "ssm:GetParameter",
+        "ssm:GetParameters",
+        "ssm:DeleteParameter",
+        "ssm:AddTagsToResource",
+        "ssm:ListTagsForResource"
+      ],
+      "Resource": "arn:aws:ssm:us-east-1:366428725717:parameter/pulseops/*"
+    },
+    {
+      "Sid": "ParameterStoreDescribe",
+      "Effect": "Allow",
+      "Action": "ssm:DescribeParameters",
+      "Resource": "*"
+    },
+    {
+      "Sid": "RdsServiceLinkedRole",
+      "Effect": "Allow",
+      "Action": "iam:CreateServiceLinkedRole",
+      "Resource": "arn:aws:iam::366428725717:role/aws-service-role/rds.amazonaws.com/AWSServiceRoleForRDS",
+      "Condition": {
+        "StringLike": { "iam:AWSServiceName": "rds.amazonaws.com" }
+      }
+    },
+    {
+      "Sid": "ElastiCacheServiceLinkedRole",
+      "Effect": "Allow",
+      "Action": "iam:CreateServiceLinkedRole",
+      "Resource": "arn:aws:iam::366428725717:role/aws-service-role/elasticache.amazonaws.com/AWSServiceRoleForElastiCache",
+      "Condition": {
+        "StringLike": { "iam:AWSServiceName": "elasticache.amazonaws.com" }
+      }
     },
     {
       "Sid": "IamForServiceRoles",
