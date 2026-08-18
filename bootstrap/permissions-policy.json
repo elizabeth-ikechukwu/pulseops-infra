@@ -43,7 +43,7 @@
     {
       "Sid": "CloudWatchLogs",
       "Effect": "Allow",
-      "Action": ["logs:CreateLogGroup", "logs:DescribeLogGroups", "logs:PutRetentionPolicy", "logs:DeleteLogGroup", "logs:TagResource"],
+      "Action": ["logs:CreateLogGroup", "logs:DescribeLogGroups", "logs:PutRetentionPolicy", "logs:DeleteLogGroup", "logs:TagResource", "logs:ListTagsForResource"],
       "Resource": "*"
     },
     {
@@ -118,6 +118,7 @@
         "iam:AttachRolePolicy",
         "iam:DetachRolePolicy",
         "iam:PutRolePolicy",
+        "iam:GetRolePolicy",
         "iam:DeleteRolePolicy",
         "iam:ListRolePolicies",
         "iam:ListAttachedRolePolicies",

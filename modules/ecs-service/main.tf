@@ -50,9 +50,7 @@ resource "aws_cloudwatch_log_group" "app" {
 
 # --- Task execution role: what ECS itself uses to pull images,
 # write logs, and fetch secrets BEFORE the app container even
-# starts. Separate from a "task role", which the running app would
-# use to call AWS directly — this app doesn't need that, it just
-# reads plain env vars that ECS already resolved for it. ---
+# starts. ---
 
 resource "aws_iam_role" "execution" {
   name = "${var.name}-ecs-execution-role"
@@ -74,9 +72,6 @@ resource "aws_iam_role_policy_attachment" "execution_managed" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-# The managed policy above covers ECR pulls and CloudWatch Logs.
-# It does NOT cover reading our specific SSM parameters — that's
-# scoped narrowly here, to exactly the four secrets this task needs.
 resource "aws_iam_role_policy" "execution_ssm" {
   name = "${var.name}-ecs-execution-ssm"
   role = aws_iam_role.execution.id
@@ -91,16 +86,54 @@ resource "aws_iam_role_policy" "execution_ssm" {
   })
 }
 
+# --- Task role: what the APP ITSELF runs as once it's started.
+# Previously nonexistent, since the app didn't need to call AWS
+# directly. Now needed specifically for ECS Exec, which requires the
+# task to be able to open its own SSM communication channel. ---
+
+resource "aws_iam_role" "task" {
+  name = "${var.name}-ecs-task-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "ecs-tasks.amazonaws.com" }
+      Action    = "sts:AssumeRole"
+    }]
+  })
+
+  tags = var.tags
+}
+
+resource "aws_iam_role_policy" "task_exec" {
+  name = "${var.name}-ecs-exec-permissions"
+  role = aws_iam_role.task.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "ssmmessages:CreateControlChannel",
+        "ssmmessages:CreateDataChannel",
+        "ssmmessages:OpenControlChannel",
+        "ssmmessages:OpenDataChannel"
+      ]
+      Resource = "*"
+    }]
+  })
+}
+
 # --- The task definition itself ---
 
 resource "aws_ecs_task_definition" "app" {
   family                   = var.name
   requires_compatibilities = ["EC2"]
-  network_mode             = "bridge" # matches EC2 launch type; awsvpc adds ENI limits not worth it for one small instance
+  network_mode             = "bridge"
   execution_role_arn       = aws_iam_role.execution.arn
+  task_role_arn            = aws_iam_role.task.arn
 
-  # t3.small has 2 vCPU / 2GB. These are per-container reservations,
-  # not the whole instance — leaves headroom for the ECS agent and OS.
   container_definitions = jsonencode([
     {
       name      = "backend"
@@ -110,7 +143,7 @@ resource "aws_ecs_task_definition" "app" {
       essential = true
 
       portMappings = [
-        { containerPort = 4000, hostPort = 0, protocol = "tcp" } # dynamic host port — only the frontend container talks to this directly, never the internet
+        { containerPort = 4000, hostPort = 0, protocol = "tcp" }
       ]
 
       environment = [
@@ -149,10 +182,7 @@ resource "aws_ecs_task_definition" "app" {
       cpu       = 256
       memory    = 256
       essential = true
-
-      # This is what lets nginx.conf's "http://backend:4000" resolve
-      # correctly, without changing a single line of app config.
-      links = ["backend"]
+      links     = ["backend"]
 
       portMappings = [
         { containerPort = 80, hostPort = 80, protocol = "tcp" }
@@ -173,18 +203,16 @@ resource "aws_ecs_task_definition" "app" {
 }
 
 resource "aws_ecs_service" "app" {
-  name            = "${var.name}-service"
-  cluster         = var.cluster_name
-  task_definition = aws_ecs_task_definition.app.arn
-  desired_count   = 1
+  name                   = "${var.name}-service"
+  cluster                = var.cluster_name
+  task_definition        = aws_ecs_task_definition.app.arn
+  desired_count          = 1
+  enable_execute_command = true # required for ECS Exec (running migrations, debugging)
 
   capacity_provider_strategy {
     capacity_provider = var.capacity_provider_name
     weight             = 1
   }
-
-  # Deliberately no load_balancer block — Nginx on the instance's
-  # own Elastic IP is the public entry point in this deployment.
 
   tags = var.tags
 }
