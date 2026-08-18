@@ -49,6 +49,7 @@ module "rds" {
     ManagedBy   = "terraform"
   }
 }
+
 module "elasticache" {
   source = "../../modules/elasticache"
 
@@ -63,6 +64,7 @@ module "elasticache" {
     ManagedBy   = "terraform"
   }
 }
+
 module "ecr" {
   source = "../../modules/ecr"
 
@@ -74,6 +76,7 @@ module "ecr" {
     ManagedBy   = "terraform"
   }
 }
+
 module "ecs" {
   source = "../../modules/ecs"
 
@@ -81,6 +84,29 @@ module "ecs" {
   vpc_id             = module.vpc.vpc_id
   public_subnet_ids  = module.vpc.public_subnet_ids
   instance_type      = "t3.small"
+
+  tags = {
+    Project     = "pulseops"
+    Environment = var.environment
+    ManagedBy   = "terraform"
+  }
+}
+
+module "ecs_service" {
+  source = "../../modules/ecs-service"
+
+  name                     = "pulseops-${var.environment}"
+  cluster_name             = module.ecs.cluster_name
+  capacity_provider_name   = module.ecs.capacity_provider_name
+  backend_repository_url   = module.ecr.backend_repository_url
+  frontend_repository_url  = module.ecr.frontend_repository_url
+
+  db_endpoint                 = module.rds.endpoint
+  db_name                     = module.rds.db_name
+  db_password_parameter_name  = module.rds.password_parameter_name
+
+  redis_endpoint  = module.elasticache.endpoint
+  redis_port      = module.elasticache.port
 
   tags = {
     Project     = "pulseops"

@@ -17,6 +17,12 @@
       "Resource": "*"
     },
     {
+      "Sid": "AutoScaling",
+      "Effect": "Allow",
+      "Action": ["autoscaling:*"],
+      "Resource": "*"
+    },
+    {
       "Sid": "Database",
       "Effect": "Allow",
       "Action": ["rds:*"],
@@ -32,6 +38,12 @@
       "Sid": "Containers",
       "Effect": "Allow",
       "Action": ["ecs:*", "ecr:*"],
+      "Resource": "*"
+    },
+    {
+      "Sid": "CloudWatchLogs",
+      "Effect": "Allow",
+      "Action": ["logs:CreateLogGroup", "logs:DescribeLogGroups", "logs:PutRetentionPolicy", "logs:DeleteLogGroup", "logs:TagResource"],
       "Resource": "*"
     },
     {
@@ -78,6 +90,24 @@
       }
     },
     {
+      "Sid": "AutoScalingServiceLinkedRole",
+      "Effect": "Allow",
+      "Action": "iam:CreateServiceLinkedRole",
+      "Resource": "arn:aws:iam::366428725717:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling",
+      "Condition": {
+        "StringLike": { "iam:AWSServiceName": "autoscaling.amazonaws.com" }
+      }
+    },
+    {
+      "Sid": "EcsServiceLinkedRole",
+      "Effect": "Allow",
+      "Action": "iam:CreateServiceLinkedRole",
+      "Resource": "arn:aws:iam::366428725717:role/aws-service-role/ecs.amazonaws.com/AWSServiceRoleForECS",
+      "Condition": {
+        "StringLike": { "iam:AWSServiceName": "ecs.amazonaws.com" }
+      }
+    },
+    {
       "Sid": "IamForServiceRoles",
       "Effect": "Allow",
       "Action": [
@@ -91,7 +121,12 @@
         "iam:DeleteRolePolicy",
         "iam:ListRolePolicies",
         "iam:ListAttachedRolePolicies",
-        "iam:TagRole"
+        "iam:TagRole",
+        "iam:CreateInstanceProfile",
+        "iam:DeleteInstanceProfile",
+        "iam:AddRoleToInstanceProfile",
+        "iam:RemoveRoleFromInstanceProfile",
+        "iam:GetInstanceProfile"
       ],
       "Resource": "*"
     }
