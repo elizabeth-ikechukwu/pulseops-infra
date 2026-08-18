@@ -203,11 +203,13 @@ resource "aws_ecs_task_definition" "app" {
 }
 
 resource "aws_ecs_service" "app" {
-  name                   = "${var.name}-service"
-  cluster                = var.cluster_name
-  task_definition        = aws_ecs_task_definition.app.arn
-  desired_count          = 1
-  enable_execute_command = true # required for ECS Exec (running migrations, debugging)
+  name                               = "${var.name}-service"
+  cluster                            = var.cluster_name
+  task_definition                    = aws_ecs_task_definition.app.arn
+  desired_count                      = 1
+  enable_execute_command             = true # required for ECS Exec (running migrations, debugging)
+  deployment_minimum_healthy_percent = 0    # single instance, port 80 is exclusive — the old task must fully stop before a new one can bind it
+  deployment_maximum_percent         = 100  # never try to run two tasks side by side; ports would collide
 
   capacity_provider_strategy {
     capacity_provider = var.capacity_provider_name
