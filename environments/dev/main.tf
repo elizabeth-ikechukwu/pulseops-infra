@@ -114,3 +114,16 @@ module "ecs_service" {
     ManagedBy   = "terraform"
   }
 }
+
+module "dns" {
+  source = "../../modules/dns"
+
+  domain_name = "pulseops-app.online"
+  elastic_ip  = "3.231.57.207"
+
+  tags = {
+    Project     = "pulseops"
+    Environment = var.environment
+    ManagedBy   = "terraform"
+  }
+}

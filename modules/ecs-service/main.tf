@@ -44,13 +44,11 @@ resource "aws_ssm_parameter" "jwt_refresh_secret" {
 
 resource "aws_cloudwatch_log_group" "app" {
   name              = "/ecs/${var.name}"
-  retention_in_days = 14 # cost-conscious default, not indefinite
+  retention_in_days = 14
   tags              = var.tags
 }
 
-# --- Task execution role: what ECS itself uses to pull images,
-# write logs, and fetch secrets BEFORE the app container even
-# starts. ---
+# --- Task execution role ---
 
 resource "aws_iam_role" "execution" {
   name = "${var.name}-ecs-execution-role"
@@ -86,10 +84,7 @@ resource "aws_iam_role_policy" "execution_ssm" {
   })
 }
 
-# --- Task role: what the APP ITSELF runs as once it's started.
-# Previously nonexistent, since the app didn't need to call AWS
-# directly. Now needed specifically for ECS Exec, which requires the
-# task to be able to open its own SSM communication channel. ---
+# --- Task role: what the app itself runs as, needed for ECS Exec ---
 
 resource "aws_iam_role" "task" {
   name = "${var.name}-ecs-task-role"
@@ -207,13 +202,24 @@ resource "aws_ecs_service" "app" {
   cluster                            = var.cluster_name
   task_definition                    = aws_ecs_task_definition.app.arn
   desired_count                      = 1
-  enable_execute_command             = true # required for ECS Exec (running migrations, debugging)
-  deployment_minimum_healthy_percent = 0    # single instance, port 80 is exclusive — the old task must fully stop before a new one can bind it
-  deployment_maximum_percent         = 100  # never try to run two tasks side by side; ports would collide
+  enable_execute_command             = true
+  deployment_minimum_healthy_percent = 0
+  deployment_maximum_percent         = 100
 
   capacity_provider_strategy {
     capacity_provider = var.capacity_provider_name
     weight             = 1
+  }
+
+  # Terraform still creates new task definition revisions when infra
+  # settings change (env vars, secrets, CPU/memory), but it no longer
+  # forces the SERVICE back to that revision — the CI/CD pipeline owns
+  # which revision actually runs, since it deploys on every push.
+  # Without this, Terraform and the pipeline fight over the same
+  # field, and a routine `terraform apply` can silently roll back a
+  # working deploy.
+  lifecycle {
+    ignore_changes = [task_definition]
   }
 
   tags = var.tags
