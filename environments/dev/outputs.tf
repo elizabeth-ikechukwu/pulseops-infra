@@ -60,3 +60,12 @@ output "ecs_service_name" {
 output "cloudwatch_log_group" {
   value = module.ecs_service.log_group_name
 }
+
+output "route53_zone_id" {
+  value = module.dns.zone_id
+}
+
+output "name_servers" {
+  description = "Paste these four into GoDaddy's Nameservers settings for pulseops-app.online"
+  value       = module.dns.name_servers
+}
