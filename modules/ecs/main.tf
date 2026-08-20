@@ -51,6 +51,40 @@ resource "aws_iam_role_policy_attachment" "ssm_managed_instance" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
 
+# --- Scoped Route53 permission for certbot's DNS-01 challenge ---
+# certbot-dns-route53 needs to create/verify a TXT record in the
+# specific hosted zone, then clean it up. Scoped to this zone only,
+# except ListHostedZones which AWS doesn't allow scoping on.
+
+resource "aws_iam_role_policy" "certbot_route53" {
+  name = "${var.name}-certbot-route53"
+  role = aws_iam_role.ecs_instance.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = "route53:GetChange"
+        Resource = "arn:aws:route53:::change/*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "route53:ChangeResourceRecordSets",
+          "route53:ListResourceRecordSets"
+        ]
+        Resource = "arn:aws:route53:::hostedzone/${var.hosted_zone_id}"
+      },
+      {
+        Effect   = "Allow"
+        Action   = "route53:ListHostedZones"
+        Resource = "*"
+      }
+    ]
+  })
+}
+
 resource "aws_iam_instance_profile" "ecs_instance" {
   name = "${var.name}-ecs-instance-profile"
   role = aws_iam_role.ecs_instance.name

@@ -20,3 +20,8 @@ variable "tags" {
   type    = map(string)
   default = {}
 }
+
+variable "hosted_zone_id" {
+  description = "Route53 hosted zone ID, for certbot's DNS-01 challenge permission"
+  type        = string
+}
