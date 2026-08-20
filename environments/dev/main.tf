@@ -84,6 +84,7 @@ module "ecs" {
   vpc_id             = module.vpc.vpc_id
   public_subnet_ids  = module.vpc.public_subnet_ids
   instance_type      = "t3.small"
+  hosted_zone_id     = module.dns.zone_id
 
   tags = {
     Project     = "pulseops"
