@@ -129,6 +129,15 @@ resource "aws_ecs_task_definition" "app" {
   execution_role_arn       = aws_iam_role.execution.arn
   task_role_arn            = aws_iam_role.task.arn
 
+  # Bind-mounts the host's Let's Encrypt directory into the frontend
+  # container so nginx can read the certificate. Certs are managed
+  # by certbot on the host, outside Terraform and outside the image —
+  # this volume just exposes them, read-only, to the container.
+  volume {
+    name      = "letsencrypt-certs"
+    host_path = "/etc/letsencrypt"
+  }
+
   container_definitions = jsonencode([
     {
       name      = "backend"
@@ -180,7 +189,16 @@ resource "aws_ecs_task_definition" "app" {
       links     = ["backend"]
 
       portMappings = [
-        { containerPort = 80, hostPort = 80, protocol = "tcp" }
+        { containerPort = 80, hostPort = 80, protocol = "tcp" },
+        { containerPort = 443, hostPort = 443, protocol = "tcp" }
+      ]
+
+      mountPoints = [
+        {
+          sourceVolume  = "letsencrypt-certs"
+          containerPath = "/etc/letsencrypt"
+          readOnly      = true
+        }
       ]
 
       logConfiguration = {
